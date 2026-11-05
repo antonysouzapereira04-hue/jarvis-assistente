@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06111f">
+<link rel="manifest" href="manifest.json">
+<title>JARVIS</title>
+<style>
+:root{--cyan:#63eaff;--blue:#168bd5;--bg:#030914}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at center,#102b45 0%,#061321 42%,#020711 100%);color:#dffaff;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;overflow:hidden}
+body:before{content:"";position:fixed;inset:0;background:linear-gradient(transparent 49.8%,#45dfff12 50%,transparent 50.2%),linear-gradient(90deg,transparent 49.8%,#45dfff0c 50%,transparent 50.2%);background-size:42px 42px;mask-image:radial-gradient(circle,#000,transparent 75%);pointer-events:none}
+main{width:min(94vw,520px);text-align:center;position:relative;padding:24px 18px}
+.brand{letter-spacing:.42em;color:var(--cyan);font-size:clamp(26px,8vw,42px);font-weight:300;text-shadow:0 0 18px #35dfff;margin-bottom:8px}
+.sub{font-size:11px;letter-spacing:.22em;color:#8cbacb}
+.orb-wrap{height:280px;display:grid;place-items:center;position:relative;margin:14px 0}
+.orb{width:190px;height:190px;border-radius:50%;border:1px solid #62eaffaa;box-shadow:0 0 24px #16bfff55,inset 0 0 32px #16bfff33;position:relative;display:grid;place-items:center;animation:pulse 3s ease-in-out infinite}
+.orb:before,.orb:after{content:"";position:absolute;border-radius:50%;inset:-17px;border:1px dashed #5ce8ff99;animation:spin 18s linear infinite}
+.orb:after{inset:-34px;border:1px solid #2aa6d866;border-left-color:transparent;border-right-color:transparent;animation:spin 12s linear infinite reverse}
+.core{width:92px;height:92px;border-radius:50%;background:radial-gradient(circle,#d7ffff 0%,#55eaff 12%,#0877b9 42%,#03172b 72%);box-shadow:0 0 22px #3de5ff,0 0 60px #008cff88}
+.orb.listening{box-shadow:0 0 38px #7fffff,inset 0 0 48px #38dfff77}
+.orb.listening .core{box-shadow:0 0 35px #aaffff,0 0 90px #00cfff}
+.status{min-height:24px;color:#9ddce9;font-size:13px;letter-spacing:.08em;margin-bottom:18px}
+button{border:1px solid #56dfff;background:linear-gradient(180deg,#0b3856,#071c30);color:#dffaff;border-radius:5px;padding:15px 22px;font-size:13px;letter-spacing:.12em;box-shadow:0 0 18px #12a9e633;min-width:190px}
+button:active{background:#12547a}
+button:disabled{opacity:.45}
+.secondary{min-width:100px;margin-left:8px;padding:15px}
+.response{margin:22px auto 0;min-height:56px;max-width:420px;color:#d5f7ff;font-size:14px;line-height:1.5}
+.note{font-size:10px;color:#668a9c;line-height:1.5;margin:22px auto 0;max-width:400px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.035);filter:brightness(1.2)}}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">J.A.R.V.I.S.</div>
+  <div class="sub">SISTEMA DE ASSISTÊNCIA PESSOAL</div>
+  <div class="orb-wrap"><div class="orb" id="orb"><div class="core"></div></div></div>
+  <div class="status" id="status">SISTEMA EM ESPERA</div>
+  <button id="listen">FALAR COM JARVIS</button>
+  <button class="secondary" id="stop">PARAR</button>
+  <div class="response" id="response">Às suas ordens, Senhor. Estou aguardando.</div>
+  <div class="note">Protótipo para navegador. Toque em “Falar com JARVIS” e permita o microfone. O reconhecimento de voz depende do navegador, da conexão e do suporte do aparelho. Esta versão ainda não é um assistente de IA completo nem fica ouvindo em segundo plano.</div>
+</main>
+<script>
+const statusEl=document.getElementById('status');
+const responseEl=document.getElementById('response');
+const orb=document.getElementById('orb');
+const listen=document.getElementById('listen');
+let recognition=null;
+function speak(text){
+  responseEl.textContent=text;
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='pt-BR'; u.rate=.92; u.pitch=.82;
+  speechSynthesis.speak(u);
+}
+function reply(text){
+  const q=text.toLowerCase();
+  if(q.includes('seu nome')) return 'Meu nome é JARVIS, Senhor. Às suas ordens.';
+  if(q.includes('olá')||q.includes('oi')) return 'Olá, Senhor. Como posso ajudá-lo?';
+  if(q.includes('como está')||q.includes('tudo bem')) return 'Estou funcionando normalmente, Senhor. Obrigado por perguntar.';
+  if(q.includes('que horas')) return 'Senhor, agora são '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'.';
+  if(q.includes('data')||q.includes('dia é hoje')) return 'Hoje é '+new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})+', Senhor.';
+  if(q.includes('obrigado')||q.includes('obrigada')) return 'Sempre às ordens, Senhor.';
+  return 'Compreendi o que disse, Senhor. Nesta versão de demonstração, ainda estou aprendendo a responder a esse tipo de pedido.';
+}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+ recognition=new SR(); recognition.lang='pt-BR'; recognition.continuous=false; recognition.interimResults=false;
+ recognition.onstart=()=>{statusEl.textContent='OUVINDO, SENHOR...';orb.classList.add('listening');listen.disabled=true;};
+ recognition.onresult=e=>{const heard=e.results[0][0].transcript;statusEl.textContent='COMANDO RECEBIDO';speak(reply(heard));};
+ recognition.onerror=e=>{statusEl.textContent='NÃO FOI POSSÍVEL OUVIR';responseEl.textContent='Verifique a permissão do microfone e tente novamente. ('+e.error+')';};
+ recognition.onend=()=>{orb.classList.remove('listening');listen.disabled=false;if(statusEl.textContent==='OUVINDO, SENHOR...')statusEl.textContent='SISTEMA EM ESPERA';};
+}else{
+ listen.disabled=true;statusEl.textContent='RECONHECIMENTO NÃO SUPORTADO';
+ responseEl.textContent='Este navegador não oferece reconhecimento de voz. Tente abrir no Google Chrome atualizado.';
+}
+listen.onclick=()=>{if(recognition){try{recognition.start()}catch(e){statusEl.textContent='AGUARDE E TENTE NOVAMENTE';}}};
+document.getElementById('stop').onclick=()=>{if(recognition)recognition.stop();if('speechSynthesis'in window)speechSynthesis.cancel();orb.classList.remove('listening');statusEl.textContent='SISTEMA EM ESPERA';};
+if('serviceWorker'in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>

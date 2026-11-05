@@ -1,0 +1,13 @@
+JARVIS — protótipo web para Android
+
+1. Extraia o ZIP no app Meus Arquivos.
+2. Abra index.html no Google Chrome.
+3. Se o navegador pedir, permita o microfone.
+4. Toque em FALAR COM JARVIS para testar.
+
+IMPORTANTE:
+- Esta é uma demonstração web, não um APK nativo.
+- O reconhecimento de voz pode não funcionar quando o arquivo é aberto diretamente como file://. Para funcionar de forma mais confiável, os arquivos precisam ser publicados em um endereço HTTPS.
+- O navegador pode não permitir reconhecimento de voz em segundo plano ou uma palavra de ativação permanente.
+- As respostas são exemplos locais, não uma IA conectada.
+- A voz usa a voz pt-BR disponível no aparelho/navegador; não reproduz a voz do filme.
